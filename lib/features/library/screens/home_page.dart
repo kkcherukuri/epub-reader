@@ -2,10 +2,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/entities/epub_book.dart';
-import '../../data/repositories/local_epub_repository.dart';
-import '../../main.dart'; // for themeNotifier
-import 'reader_page.dart';
+import '../../../domain/entities/epub_book.dart';
+import '../../../data/repositories/local_epub_repository.dart';
+import '../../../main.dart'; // for themeNotifier
+import '../../reader/screens/reader_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

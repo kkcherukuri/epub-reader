@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
-import '../../domain/entities/epub_book.dart';
+import '../../../domain/entities/epub_book.dart';
 
 class ReaderPage extends StatefulWidget {
   final EpubBook book;
@@ -32,6 +32,11 @@ class _ReaderPageState extends State<ReaderPage> {
     _controller = WebViewController();
     try {
       _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+      _controller.addJavaScriptChannel('EpubInteract', onMessageReceived: (message) {
+        if (message.message == 'tap') {
+          setState(() => _showUI = !_showUI);
+        }
+      });
     } catch (_) {}
   }
 
@@ -92,9 +97,26 @@ class _ReaderPageState extends State<ReaderPage> {
     ''';
 
     if (htmlContent.contains('</head>')) {
-      htmlContent = htmlContent.replaceFirst('</head>', '\\n$styleInjection\\n</head>');
+      htmlContent = htmlContent.replaceFirst('</head>', '\n$styleInjection\n</head>');
     } else {
-      htmlContent = '$styleInjection\\n$htmlContent';
+      htmlContent = '$styleInjection\n$htmlContent';
+    }
+
+    final scriptInjection = '''
+      <script>
+        document.addEventListener('click', function(e) {
+          if (e.target.tagName !== 'A') {
+            if (typeof EpubInteract !== 'undefined') {
+              EpubInteract.postMessage('tap');
+            }
+          }
+        });
+      </script>
+    ''';
+    if (htmlContent.contains('</body>')) {
+      htmlContent = htmlContent.replaceFirst('</body>', '$scriptInjection\n</body>');
+    } else {
+      htmlContent = '$htmlContent\n$scriptInjection';
     }
 
     // Inject absolute image base64 data
@@ -125,8 +147,8 @@ class _ReaderPageState extends State<ReaderPage> {
     final currentChapter = widget.book.chapters[_currentIndex];
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      extendBody: true,
+      extendBodyBehindAppBar: false,
+      extendBody: false,
       appBar: _showUI ? AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.95),
         elevation: 0,
@@ -138,10 +160,7 @@ class _ReaderPageState extends State<ReaderPage> {
           ],
         ),
       ) : null,
-      body: GestureDetector(
-        onTap: () => setState(() => _showUI = !_showUI),
-        child: WebViewWidget(controller: _controller),
-      ),
+      body: WebViewWidget(controller: _controller),
       bottomNavigationBar: _showUI ? BottomAppBar(
         color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
         elevation: 0,
