@@ -29,11 +29,11 @@ class LocalEpubRepository implements EpubRepository {
     if (opfPath == null) throw Exception('OPF path not found in container.xml');
     
     final opfContentBytes = archiveFiles[opfPath];
-    if (opfContentBytes == null) throw Exception('OPF file not found: $opfPath');
+    if (opfContentBytes == null) throw Exception('OPF file not found: \$opfPath');
     
     final opfContent = String.fromCharCodes(opfContentBytes);
     final opfXml = XmlDocument.parse(opfContent);
-    final opfDir = p.dirname(opfPath);
+    final opfDir = p.posix.dirname(opfPath);
     
     // Parse metadata
     final metadataNodes = opfXml.findAllElements('metadata');
@@ -53,8 +53,8 @@ class LocalEpubRepository implements EpubRepository {
       final id = item.getAttribute('id');
       final href = item.getAttribute('href');
       if (id != null && href != null) {
-        // Keep paths uniform with forward slashes
-        final resolvedHref = p.normalize(p.join(opfDir, Uri.decodeComponent(href))).replaceAll('\\', '/');
+        // Keep paths uniform with forward slashes using posix paths
+        final resolvedHref = p.posix.normalize(p.posix.join(opfDir, Uri.decodeComponent(href)));
         manifestItems[id] = resolvedHref;
       }
     }

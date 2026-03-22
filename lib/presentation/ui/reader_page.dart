@@ -55,7 +55,7 @@ class _ReaderPageState extends State<ReaderPage> {
     }
 
     String htmlContent = utf8.decode(chapterBytes, allowMalformed: true);
-    final chapterDir = p.dirname(chapter.href);
+    final chapterDir = p.posix.dirname(chapter.href);
     
     // Inject exact modern typography and dark mode bindings via CSS
     // This fully bypasses the webview_flutter Web NavigationDelegate Unimplemented bugs!
@@ -92,21 +92,21 @@ class _ReaderPageState extends State<ReaderPage> {
     ''';
 
     if (htmlContent.contains('</head>')) {
-      htmlContent = htmlContent.replaceFirst('</head>', '\\n\$styleInjection\\n</head>');
+      htmlContent = htmlContent.replaceFirst('</head>', '\\n$styleInjection\\n</head>');
     } else {
-      htmlContent = '\$styleInjection\\n\$htmlContent';
+      htmlContent = '$styleInjection\\n$htmlContent';
     }
 
     // Inject absolute image base64 data
     htmlContent = htmlContent.replaceAllMapped(RegExp(r'src="([^"]+)"'), (match) {
       final src = match.group(1)!;
       if (src.startsWith('http') || src.startsWith('data:')) return match.group(0)!;
-      final imagePath = p.normalize(p.join(chapterDir, Uri.decodeComponent(src))).replaceAll('\\\\', '/');
+      final imagePath = p.posix.normalize(p.posix.join(chapterDir, Uri.decodeComponent(src)));
       final imgBytes = widget.book.archiveFiles[imagePath];
       if (imgBytes != null) {
         final ext = p.extension(imagePath).toLowerCase().replaceAll('.', '');
         final mimeType = ext == 'png' ? 'image/png' : (ext == 'jpg' || ext == 'jpeg' ? 'image/jpeg' : 'image/svg+xml');
-        return 'src="data:\$mimeType;base64,\${base64Encode(imgBytes)}"';
+        return 'src="data:$mimeType;base64,${base64Encode(imgBytes)}"';
       }
       return match.group(0)!; 
     });
@@ -115,7 +115,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
     // Save Last-Read state
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('last_read_\${widget.book.title}', _currentIndex);
+    await prefs.setInt('last_read_${widget.book.title}', _currentIndex);
   }
 
   @override
@@ -154,7 +154,7 @@ class _ReaderPageState extends State<ReaderPage> {
               color: _currentIndex > 0 ? Theme.of(context).colorScheme.primary : Colors.grey,
               onPressed: _currentIndex > 0 ? () => _loadChapter(_currentIndex - 1) : null,
             ),
-            Text('\${_currentIndex + 1} / \${widget.book.chapters.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('${_currentIndex + 1} / ${widget.book.chapters.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
             IconButton(
               icon: const Icon(Icons.skip_next_rounded),
               iconSize: 32,
